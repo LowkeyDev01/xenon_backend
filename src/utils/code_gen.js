@@ -1,55 +1,47 @@
-import { offlineDB, onlineDB } from "../db.js";
+import { offlineDBClient, onlineDBClient } from "../db.js";
 import crypto from 'crypto';
-import { configDotenv } from "dotenv";
-import { use } from "react";
+import dotenv from 'dotenv';
 
+dotenv.config();
 function generateCode() {
     return 'XENON-' + crypto.randomBytes(12).toString('hex').toUpperCase();
 }
-async function emergentTable(client) {
-    const query = `CREATE TABLE codes(code_string PRIMARY KEY UNIQUE, account_type TEXT CHECK(account_type IN('USER', 'CREATOR')), is_bought BOOLEAN DEFAULT FALSE, bought_at TIMESTAMP);`
-
-    await client.query(query)
-
-}
-await emergentTable(offlineDB);
-await emergentTable(onlineDB);
 async function insertName(client, code, type) {
     const query = `INSERT INTO codes (code_string, account_type) VALUES ($1, $2)`
     await client.query(query, [code, type])
 }
 
-export async function generateBaches({users = 0, creators = 0}) {
-    const onlineDBClient = await onlineDB.connect();
-    const offlineDBClient = await offlineDB.connect();
+export async function generateBaches({ users = 0, creators = 0 }) {
+    const onlineClient = await onlineDBClient.connect();
+    const offlineClient = await offlineDBClient.connect();
 
-    try{
-        await onlineDBClient.query('BEGIN')
-        await offlineDBClient.query('BEGIN')
+    try {
+        await onlineClient.query('BEGIN')
+        await offlineClient.query('BEGIN')
 
-        for(i = 0; i < users; i++){
+        for (let i = 0; i < users; i++) {
             const code = generateCode();
-            await insertName(onlineDBClient, code, "USER")
-            await insertName(offlineDBClient, code, "USER")
+            await insertName(onlineClient, code, "USER")
+            await insertName(offlineClient, code, "USER")
         }
-        for(i = 0; i < creators; i++){
+        for (let i = 0; i < creators; i++) {
             const code = generateCode();
-            await insertName(onlineDBClient, code, "CREATOR")
-            await insertName(offlineDBClient, code, "CREATOR")
+            await insertName(onlineClient, code, "CREATOR")
+            await insertName(offlineClient, code, "CREATOR")
         }
-        await offlineDBClient('COMMIT')
-        await onlineDBClient('COMMIT')
+        await onlineClient.query('COMMIT')
+        await offlineClient.query('COMMIT')
 
-        console.log(`generated ${users} USER codes and ${creators} CREATOR code`)
+        console.log(`generated ${users} USER codes and ${creators} CREATOR codes`)
     }
-    catch(err){
-        await offlineDBClient('ROLLBACK')
-        await onlineDBClient('ROLLBACK')
+    catch (err) {
+        await onlineClient.query('ROLLBACK')
+        await offlineClient.query('ROLLBACK')
         console.error(err.message)
+        throw err;
     }
-    finally{
-        onlineDBClient.release();
-        offlineDBClient.release();
+    finally {
+        onlineClient.release();
+        offlineClient.release();
     }
 }
-
