@@ -7,17 +7,17 @@ const app = express();
 app.use(express.json());
 
 app.post('/health', (req, res) => {
-  res.status.json('ts is running!');
+  res.status.send('ts is running!');
 })
 
 app.post('/code-gen', async (req, res) => {
   try {
     const { users, creators } = req.body
     await generateBaches({ users, creators });
-    res.status(200).json(`created ${users} amount of users and ${creators} amount of creators`)
+    res.status(200).send(`created ${users} amount of users and ${creators} amount of creators`)
   }
   catch (err) {
-    return res.status(400).json({ error: err.message });
+    return res.status(400).send({ error: err.message });
     console.error(err);
     throw err;
   }
