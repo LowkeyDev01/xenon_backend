@@ -10,26 +10,25 @@ const app = express();
 app.use(cors())
 app.use(express.json());
 
-
 app.get('/health', (req, res) => {
-  res.send('ts is running!');
+  res.send('Server is running!');
 })
 
 app.post('/pay/verify', async (req, res) => {
-  const { reference } = req.body;
-
-  const paystackRes = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
-    headers: {
-      Authorization: `Bearer ${process.env.PAYSTACK_SECRET}`
-    }
-  });
-
-  const result = await paystackRes.json();
-
-  if (result.data.status !== "success") {
-    return res.status(400).json({ error: "Payment not Verified" })
-  }
   try {
+    const { reference } = req.body;
+
+    const paystackRes = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
+      headers: {
+        Authorization: `Bearer ${process.env.PAYSTACK_SECRET}`
+      }
+    });
+
+    const result = await paystackRes.json();
+
+    if (result.data.status !== "success") {
+      return res.status(400).json({ error: "Payment not Verified" })
+    }
     const codeResult = await onlineDBClient.query('SELECT code_string FROM codes WHERE is_bought = false LIMIT 1')
 
     if (codeResult.rows.length === 0) {
@@ -45,6 +44,7 @@ app.post('/pay/verify', async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 })
+
 app.post('/code-gen', async (req, res) => {
   try {
     const { users, creators } = req.body
@@ -59,11 +59,11 @@ app.post('/code-gen', async (req, res) => {
     res.status(200).send(`created ${users} amount of users and ${creators} amount of creators`)
   }
   catch (err) {
-    return res.status(400).send({ error: err.message });
     console.error(err);
-    throw err;
+    res.status(400).json({ error: err.message });
   }
 })
+
 app.listen(process.env.PORT || 5000, () => {
-  console.log(`ts is running on PORT ${process.env.PORT}`)
+  console.log(`Server is running on PORT ${process.env.PORT}`)
 })
