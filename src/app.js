@@ -12,7 +12,7 @@ app.use(express.json());
 
 
 app.get('/health', (req, res) => {
-  res.status.send('ts is running!');
+  res.send('ts is running!');
 })
 
 app.post('/pay/verify', async (req, res) => {
