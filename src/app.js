@@ -14,7 +14,7 @@ app.get('/health', (req, res) => {
   res.send('Server is running!');
 })
 
-app.post('/pay/verify/user', async (req, res) => {
+app.post('/pay/verify', async (req, res) => {
   try {
     const { reference, role } = req.body;
 
