@@ -43,7 +43,7 @@ app.post('/pay/verify', async (req, res) => {
 
     if (resConfirm) {
       const { code_string } = resConfirm
-      return res.json({ code_string })
+      return res.json({ code: code_string })
     }
     //THE main feature
     const updateResult = await onlineDBClient.query(
