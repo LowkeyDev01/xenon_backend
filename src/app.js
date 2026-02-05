@@ -38,27 +38,24 @@ app.post('/pay/verify', async (req, res) => {
     if (result.data.status !== "success") {
       return res.status(400).json({ error: "Payment not verified" });
     }
+    const checkData = await onlineDBClient.query('SELECT * FROM codes WHERE is_bought = true AND reference = $1', [reference]);
+    const resConfirm = checkData.rows[0]
 
-    const codeResult = await onlineDBClient.query(
-      'SELECT code_string FROM codes WHERE is_bought = false AND account_type = $1 LIMIT 1',
-      [role]
-    );
-
-    if (codeResult.rows.length === 0) {
-      return res.status(503).json({ error: "No codes available" });
+    if (resConfirm) {
+      const { code_string } = resConfirm
+      return res.json({ code_string })
     }
-
-    const code = codeResult.rows[0].code_string;
-
+    //THE main feature
     const updateResult = await onlineDBClient.query(
-      'UPDATE codes SET is_bought = true, bought_at = NOW() WHERE code_string = $1',
-      [code]
+      `UPDATE codes SET is_bought = true, bought_at = NOW(), reference = $1 WHERE code_string = (SELECT code_string FROM codes WHERE is_bought = false AND account_type = $2 FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING code_string`,
+      [reference, role]
     );
 
     if (updateResult.rowCount === 0) {
       return res.status(500).json({ error: "Failed to process code" });
     }
 
+    const code = updateResult.rows[0].code_string;
     res.json({ code });
   }
   catch (err) {
