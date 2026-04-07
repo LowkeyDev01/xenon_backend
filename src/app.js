@@ -47,8 +47,8 @@ app.post('/pay/verify', async (req, res) => {
     }
     //THE main feature
     const updateResult = await onlineDBClient.query(
-      `UPDATE codes SET is_bought = true, bought_at = NOW(), reference = $1 WHERE code_string = (SELECT code_string FROM codes WHERE is_bought = false AND account_type = $2 FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING code_string`,
-      [reference, role]
+      `UPDATE codes SET is_bought = true, bought_at = NOW(), wa_id = $1 WHERE code_string = (SELECT code_string FROM codes WHERE is_bought = false AND account_type = $2 FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING code_string`,
+      [wa_id, role]
     );
 
     if (updateResult.rowCount === 0) {
